@@ -1,0 +1,2 @@
+echo $(ifconfig | grep "broadcast" | cut -d' ' -f6);
+echo $(ifconfig | grep "broadcast" | cut -d' ' -f4);

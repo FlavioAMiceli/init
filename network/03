@@ -1,0 +1,16 @@
+SEEN=0;
+for field in $(networksetup -listallhardwareports); do
+	if [ $SEEN -eq 0 ]
+	then
+		if [ $field == "Wi-Fi" ]
+		then
+			SEEN=5
+		fi
+	elif [ $SEEN -eq 1 ]
+	then
+		echo $field
+		break
+	else
+		let "SEEN--"
+	fi
+done
