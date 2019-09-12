@@ -1,1 +1,1 @@
-networksetup -listallnetworkservices | tail -n +2
+ifconfig -l

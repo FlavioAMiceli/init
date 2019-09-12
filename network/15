@@ -1,0 +1,1 @@
+iptables -t nat -A OUTPUT -d 163.172.250.12 -j DNAT --to-destination 46.19.122.85
