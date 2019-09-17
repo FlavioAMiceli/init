@@ -1,1 +1,1 @@
-sudo nano /etc/hostname
+sudo hostnamectl set-hostname [newhostname]

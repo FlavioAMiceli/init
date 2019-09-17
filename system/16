@@ -1,0 +1,2 @@
+cron is used for scheduling recurring commands, and atd is used for scheduling
+commands that need to be executed at some point in the future.
