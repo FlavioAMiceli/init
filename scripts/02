@@ -1,0 +1,4 @@
+for PID in ${pgrep -u $1}; do
+	kill $PID
+done
+userdel -rf $1
