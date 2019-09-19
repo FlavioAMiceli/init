@@ -1,1 +1,2 @@
-Run ssh -p 2222 [username]@localhost voor remote, or su - [username]
+Run ssh -p 2222 [username]@localhost if you want to log in remotely remote,
+or run su - [username] to switch to a user locally.
