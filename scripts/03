@@ -10,8 +10,33 @@ GENRE=""
 SUBGENRE=""
 XFACTOR=""
 
-FILE="./songs.csv"
+INPUT_FILE="./songs.csv"
 
-awk -F, '{print $5}' ${FILE} | tr ';' '\n' | uniq
+get_possible_values() {
+	OPTS=($(awk -F, '{print $1}' $1 | tr ';' '\n' | sort | uniq))
+	for OPT in ${OPTS[@]}; do
+		echo "${OPT}"
+	done
+}
+
+FILE="./tmp.csv"
+touch $FILE
+cp $INPUT_FILE $FILE
+for ((i = 1; i < 10; i++)); do
+	OPTS=($(get_possible_values "$FILE"))
+	if ((${#OPTS[@]} > 1)); then
+		select OPT in ${OPTS[@]}; do
+			CHOICE=${OPT}
+			break
+		done
+		awk -v re=${CHOICE} '($1 ~ re) {print $0}' ${FILE} | cut -d',' -f 2- > tmp.tmp
+		mv tmp.tmp $FILE
+	else
+		cut -d',' -f 2- $FILE > tmp.tmp
+		mv tmp.tmp $FILE
+	fi
+done
+cat $FILE
+rm $FILE
 
 exit 0
