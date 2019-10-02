@@ -19,24 +19,35 @@ get_possible_values() {
 	done
 }
 
-FILE="./tmp.csv"
-touch $FILE
-cp $INPUT_FILE $FILE
+get_random_line() {
+	let LEN=$(wc -l $1 | awk '{print $1}')
+	let "N=$((RANDOM%=$LEN)) + 1"
+	sed "${N}q;d" $1
+	rm $1
+}
+
+OUT_FILE="./tmp.csv"
+touch $OUT_FILE
+cp $INPUT_FILE $OUT_FILE
 for ((i = 1; i < 10; i++)); do
-	OPTS=($(get_possible_values "$FILE"))
+	OPTS=($(get_possible_values $OUT_FILE))
 	if ((${#OPTS[@]} > 1)); then
 		select OPT in ${OPTS[@]}; do
 			CHOICE=${OPT}
 			break
 		done
-		awk -v re=${CHOICE} '($1 ~ re) {print $0}' ${FILE} | cut -d',' -f 2- > tmp.tmp
-		mv tmp.tmp $FILE
+		awk -v re=${CHOICE} '($1 ~ re) {print $0}' ${OUT_FILE} | cut -d',' -f 2- > tmp.tmp
+		mv tmp.tmp $OUT_FILE
 	else
-		cut -d',' -f 2- $FILE > tmp.tmp
-		mv tmp.tmp $FILE
+		cut -d',' -f 2- $OUT_FILE > tmp.tmp
+		mv tmp.tmp $OUT_FILE
 	fi
 done
-cat $FILE
-rm $FILE
+
+get_random_line $OUT_FILE > tmp.tmp
+mv tmp.tmp $OUT_FILE
+awk -F, '{print $1}' $OUT_FILE
+open -a Firefox $(awk -F, '{print $2}' $OUT_FILE)
+rm $OUT_FILE
 
 exit 0
