@@ -10,12 +10,34 @@ GENRE=""
 SUBGENRE=""
 XFACTOR=""
 
-INPUT_FILE="./songs.csv"
+ADD=0
+OUT_FILE="./tmp.csv"
+
+usage() {
+	echo -e "Usage: $0 [-a] file\n\t-a, add new entries to specified file." >&2
+}
 
 get_possible_values() {
 	OPTS=($(awk -F, '{print $1}' $1 | tr ';' '\n' | sort | uniq))
 	for OPT in ${OPTS[@]}; do
 		echo "${OPT}"
+	done
+}
+
+get_user_choices() {
+	for ((i = 1; i < 10; i++)); do
+		OPTS=($(get_possible_values $1))
+		if ((${#OPTS[@]} > 1)); then
+			select OPT in ${OPTS[@]}; do
+				CHOICE=${OPT}
+				break
+			done
+			awk -v re=${CHOICE} '($1 ~ re) {print $0}' $1 | cut -d',' -f 2- > tmp.tmp
+			mv tmp.tmp $1
+		else
+			cut -d',' -f 2- $1 > tmp.tmp
+			mv tmp.tmp $1
+		fi
 	done
 }
 
@@ -26,28 +48,72 @@ get_random_line() {
 	rm $1
 }
 
-OUT_FILE="./tmp.csv"
-touch $OUT_FILE
-cp $INPUT_FILE $OUT_FILE
-for ((i = 1; i < 10; i++)); do
-	OPTS=($(get_possible_values $OUT_FILE))
-	if ((${#OPTS[@]} > 1)); then
-		select OPT in ${OPTS[@]}; do
-			CHOICE=${OPT}
-			break
-		done
-		awk -v re=${CHOICE} '($1 ~ re) {print $0}' ${OUT_FILE} | cut -d',' -f 2- > tmp.tmp
-		mv tmp.tmp $OUT_FILE
-	else
-		cut -d',' -f 2- $OUT_FILE > tmp.tmp
-		mv tmp.tmp $OUT_FILE
-	fi
+if [[ -z $1 ]]; then
+	usage
+	exit 1
+elif [[ -f "$1" ]]; then
+	INPUT_FILE=$1
+fi
+while getopts ":a:" OPT; do
+	case ${OPT} in
+		a )
+			ADD=1
+			INPUT_FILE=${OPTARG}
+			if [ -z "${INPUT_FILE}" ]; then
+				echo "Invalid option: -${OPT} requires a filename or non-emtpy string as argument." >&2
+				exit 1
+			fi
+			;;
+		: )
+			echo "Invalid option: -${OPTARG} requires an argument" >&2
+			exit 1
+			;;
+		\? )
+			usage
+			exit 1
+			;;
+	esac
 done
 
-get_random_line $OUT_FILE > tmp.tmp
-mv tmp.tmp $OUT_FILE
-awk -F, '{print $1}' $OUT_FILE
-open -a Firefox $(awk -F, '{print $2}' $OUT_FILE)
+touch $OUT_FILE
+cp $INPUT_FILE $OUT_FILE
+
+if [[  $ADD -eq 0 ]]; then
+	get_user_choices $OUT_FILE
+	get_random_line $OUT_FILE > tmp.tmp
+	mv tmp.tmp $OUT_FILE
+	awk -F, '{print $1}' $OUT_FILE
+	open -a Firefox $(awk -F, '{print $2}' $OUT_FILE)
+else
+	echo "When multiple values make sense in a category, separate them using the semi-colon, [;]."
+	for ((i = 1; i < 9; i++)); do
+		OPTS=($(get_possible_values $OUT_FILE))
+		if ((${#OPTS[@]} > 0)); then
+			echo -e "Suggestions for this category are:\n"
+			for OPT in ${OPTS[@]}; do
+				echo "$OPT"
+			done
+		fi
+		read VALUES
+		echo "$VALUES" | tr ' ' '-' >> tmp2.tmp
+		cut -d',' -f 2- $OUT_FILE > tmp.tmp
+		mv tmp.tmp $OUT_FILE
+	done
+	echo "Now describe what makes this unique."
+	read VALUES
+	echo "$VALUES" | tr ' ' '-' >> tmp2.tmp
+	echo "What is the name of this artist?"
+	read VALUES
+	echo "$VALUES" >> tmp2.tmp
+	echo "What is this album/song called?"
+	read VALUES
+	echo "$VALUES" >> tmp2.tmp
+	cat tmp2.tmp | tr '\n' ',' >> $INPUT_FILE
+	echo "What is the URL?"
+	read VALUES
+	echo "$VALUES" >> $INPUT_FILE
+fi
+
 rm $OUT_FILE
 
 exit 0
