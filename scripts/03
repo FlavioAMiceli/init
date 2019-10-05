@@ -11,7 +11,6 @@ SUBGENRE=""
 XFACTOR=""
 
 ADD=0
-OUT_FILE="./tmp.csv"
 
 usage() {
 	echo -e "Usage: $0 [-a] file\n\t-a, add new entries to specified file." >&2
@@ -25,27 +24,27 @@ get_possible_values() {
 }
 
 get_user_choices() {
-	for ((i = 1; i < 10; i++)); do
-		OPTS=($(get_possible_values $1))
+	CHOICES=$(cat $1)
+	for ((i = 1; i < 9; i++)); do
+		OPTS=($(echo "$CHOICES" | get_possible_values))
 		if ((${#OPTS[@]} > 1)); then
 			select OPT in ${OPTS[@]}; do
 				CHOICE=${OPT}
 				break
 			done
-			awk -v re=${CHOICE} '($1 ~ re) {print $0}' $1 | cut -d',' -f 2- > tmp.tmp
-			mv tmp.tmp $1
+			CHOICES=$(echo "$CHOICES" | awk -v re=${CHOICE} '($1 ~ re) {print $0}' | cut -d',' -f 2-)
 		else
-			cut -d',' -f 2- $1 > tmp.tmp
-			mv tmp.tmp $1
+			CHOICES=$(echo "$CHOICES" | cut -d',' -f 2-)
 		fi
 	done
+	echo "$CHOICES"
 }
 
 get_random_line() {
-	let LEN=$(wc -l $1 | awk '{print $1}')
+	CHOICES=$(cat $1)
+	let LEN=$(echo "$CHOICES" | wc -l | awk '{print $1}')
 	let "N=$((RANDOM%=$LEN)) + 1"
-	sed "${N}q;d" $1
-	rm $1
+	echo "$CHOICES" | sed "${N}q;d"
 }
 
 if [[ -z $1 ]]; then
@@ -75,19 +74,17 @@ while getopts ":a:" OPT; do
 	esac
 done
 
-touch $OUT_FILE
-cp $INPUT_FILE $OUT_FILE
-
 if [[  $ADD -eq 0 ]]; then
-	get_user_choices $OUT_FILE
-	get_random_line $OUT_FILE > tmp.tmp
-	mv tmp.tmp $OUT_FILE
-	awk -F, '{print $1}' $OUT_FILE
-	open -a Firefox $(awk -F, '{print $2}' $OUT_FILE)
+	CHOICES=$(get_user_choices $INPUT_FILE)
+	CHOICE=$(echo "$CHOICES" | get_random_line)
+	echo "$CHOICE" | awk -F, '{print $1}'
+	open -a Firefox $(echo "$CHOICE" | awk -F, '{print $2}')
 else
 	echo "When multiple values make sense in a category, separate them using the semi-colon, [;]."
+	CHOICES=$(cat $INPUT_FILE)
+	NEW_ENTRY=""
 	for ((i = 1; i < 9; i++)); do
-		OPTS=($(get_possible_values $OUT_FILE))
+		OPTS=($(echo "$CHOICES" | get_possible_values))
 		if ((${#OPTS[@]} > 0)); then
 			echo -e "Suggestions for this category are:\n"
 			for OPT in ${OPTS[@]}; do
@@ -95,25 +92,19 @@ else
 			done
 		fi
 		read VALUES
-		echo "$VALUES" | tr ' ' '-' >> tmp2.tmp
-		cut -d',' -f 2- $OUT_FILE > tmp.tmp
-		mv tmp.tmp $OUT_FILE
+		NEW_ENTRY+="$(echo "$VALUES" | tr ' ' '-'),"
+		CHOICES=$(echo "$CHOICES" | cut -d',' -f 2-)
 	done
-	echo "Now describe what makes this unique."
-	read VALUES
-	echo "$VALUES" | tr ' ' '-' >> tmp2.tmp
 	echo "What is the name of this artist?"
 	read VALUES
-	echo "$VALUES" >> tmp2.tmp
+	NEW_ENTRY+="$VALUES - "
 	echo "What is this album/song called?"
 	read VALUES
-	echo "$VALUES" >> tmp2.tmp
-	cat tmp2.tmp | tr '\n' ',' >> $INPUT_FILE
+	NEW_ENTRY+="$VALUES"
+	echo "$NEW_ENTRY" | tr '\n' ',' >> $INPUT_FILE
 	echo "What is the URL?"
 	read VALUES
 	echo "$VALUES" >> $INPUT_FILE
 fi
-
-rm $OUT_FILE
 
 exit 0
