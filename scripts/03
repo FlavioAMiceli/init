@@ -1,15 +1,5 @@
 #!/bin/bash
 
-INTENSITY=""
-MOOD=""
-TYPE=""
-RHYTM=""
-MELODY=""
-VOCALS=""
-GENRE=""
-SUBGENRE=""
-XFACTOR=""
-
 ADD=0
 
 usage() {
