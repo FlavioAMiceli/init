@@ -1,2 +1,4 @@
-Run ssh -p 2222 [username]@localhost if you want to log in remotely remote,
-or run su - [username] to switch to a user locally.
+Run ssh -p 2222 root@localhost if you want to log in remotely,
+then run adduser and switch to it.
+or adduser first while logged in locally, then switch.
+Switching users is done by running su - [username].

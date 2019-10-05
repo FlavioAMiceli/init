@@ -1,2 +1,1 @@
-/home/flavio/.ssh/id_rsa would be the default location for a user named flavio,
-but you can put it elsewhere during generation.
+~/.ssh/authorized_keys is the file that contains keys that are authorized to connect through SSH.
